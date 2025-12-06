@@ -1,31 +1,34 @@
-from app.db.models import User, FishProduct, Advertisement, PriceHistory
-from passlib.context import CryptContext
+# app/db/crud.py
 from sqlalchemy.orm import Session
+from app.db import models
 from datetime import datetime
+from typing import List, Optional
 
-# Используем argon2 вместо bcrypt
-pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+# --- PRODUCTS ---
 
-# Пользователи
-def create_user(db: Session, email: str, password: str, role: str):
-    password_hash = pwd_context.hash(password[:72])
-    user = User(email=email, password_hash=password_hash, role=role)
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return user
+def get_products(db: Session) -> List[models.FishProduct]:
+    return db.query(models.FishProduct).all()
 
-# Продукты
-def create_product(db: Session, code: str, name: str, category: str):
-    product = FishProduct(code=code, name=name, category=category)
+def get_product(db: Session, product_id: int) -> Optional[models.FishProduct]:
+    return db.query(models.FishProduct).filter(models.FishProduct.id == product_id).first()
+
+def create_product(db: Session, code: str, name: str, category: str) -> models.FishProduct:
+    product = models.FishProduct(code=code, name=name, category=category)
     db.add(product)
     db.commit()
     db.refresh(product)
     return product
 
-# Объявления
-def create_advertisement(db: Session, product_id: int, source_id: str, source_url: str, text: str):
-    ad = Advertisement(
+# --- ADVERTISEMENTS ---
+
+def get_advertisements(db: Session) -> List[models.Advertisement]:
+    return db.query(models.Advertisement).all()
+
+def get_advertisement(db: Session, ad_id: int) -> Optional[models.Advertisement]:
+    return db.query(models.Advertisement).filter(models.Advertisement.id == ad_id).first()
+
+def create_advertisement(db: Session, product_id: int, source_id: str, source_url: str, text: str) -> models.Advertisement:
+    ad = models.Advertisement(
         product_id=product_id,
         source_id=source_id,
         source_url=source_url,
@@ -37,9 +40,16 @@ def create_advertisement(db: Session, product_id: int, source_id: str, source_ur
     db.refresh(ad)
     return ad
 
-# История цен
-def create_price(db: Session, product_id: int, price: float, source_id: str):
-    price_entry = PriceHistory(
+# --- PRICE HISTORY ---
+
+def get_price_history(db: Session, product_id: int = None) -> List[models.PriceHistory]:
+    query = db.query(models.PriceHistory)
+    if product_id is not None:
+        query = query.filter(models.PriceHistory.product_id == product_id)
+    return query.all()
+
+def add_price(db: Session, product_id: int, price: float, source_id: str) -> models.PriceHistory:
+    price_entry = models.PriceHistory(
         product_id=product_id,
         price=price,
         date=datetime.utcnow(),
