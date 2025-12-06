@@ -16,3 +16,4 @@ requests
 sqlalchemy
 uvicorn
 bcrypt
+argon2_cffi

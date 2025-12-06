@@ -1,14 +1,23 @@
-from app.core.database import SessionLocal
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from app.db.models import Base
 from app.db import crud
 
+# Настройка подключения к БД
+DATABASE_URL = "mysql+pymysql://root:@localhost/fishscope"
+engine = create_engine(DATABASE_URL, echo=True)
+SessionLocal = sessionmaker(bind=engine)
+db = SessionLocal()
+
+# Создаем таблицы (если еще не созданы)
+Base.metadata.create_all(bind=engine)
+
 def main():
-    db = SessionLocal()
-
-    # 1. Создаём продукт
+    # 1️⃣ Создаем продукт
     product = crud.create_product(db, code="F001", name="Лосось", category="Рыба")
-    print("Создан продукт:", product.id, product.code, product.name)
+    print(f"Создан продукт: {product.id} {product.code} {product.name}")
 
-    # 2. Создаём объявление для продукта
+    # 2️⃣ Создаем объявление
     ad = crud.create_advertisement(
         db,
         product_id=product.id,
@@ -16,29 +25,15 @@ def main():
         source_url="https://fishery.ru/ad/AD001",
         text="Лосось свежий, цена 500 руб/кг"
     )
-    print("Создано объявление:", ad.id, ad.source_id)
+    print(f"Создано объявление: {ad.id} {ad.source_id}")
 
-    # 3. Добавляем цену в историю
-    price = crud.add_price(db, product_id=product.id, price=500, source_id=ad.source_id)
-    print("Добавлена цена:", price.id, price.price)
+    # 3️⃣ Добавляем цену
+    price = crud.create_price(db, product_id=product.id, price=500, source_id=ad.source_id)
+    print(f"Добавлена цена: {price.id} {price.price}")
 
-    # 4. Создаём пользователя
+    # 4️⃣ Создаем пользователя
     user = crud.create_user(db, email="admin@example.com", password="12345", role="admin")
-    print("Создан пользователь:", user.id, user.email, user.role)
-
-    # 5. Получаем все продукты
-    products = crud.list_products(db)
-    print("Список продуктов:", [(p.id, p.name) for p in products])
-
-    # 6. Получаем объявления по продукту
-    ads = crud.get_ads_by_product(db, product_id=product.id)
-    print("Объявления продукта:", [(a.id, a.source_id) for a in ads])
-
-    # 7. Получаем историю цен
-    prices = crud.get_price_history(db, product_id=product.id)
-    print("История цен продукта:", [(p.id, p.price) for p in prices])
-
-    db.close()
+    print(f"Создан пользователь: {user.id} {user.email}")
 
 if __name__ == "__main__":
     main()
