@@ -15,3 +15,4 @@ redis
 requests
 sqlalchemy
 uvicorn
+bcrypt
